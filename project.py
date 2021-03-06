@@ -117,8 +117,7 @@ def scanOneLine(emiter, detector, img):
     scanned = 0
     posToScan = bresenham(emiter, detector, img)
     for i in posToScan:
-        if img[i[1]][i[0]] > scanned:
-            scanned = img[i[1]][i[0]]
+        scanned += img[i[1]][i[0]]
     return scanned
             
 #skip - skok czyli ilość stopni do obrócenia 'głowicy' z emiterami/detektorami           
@@ -141,15 +140,18 @@ def generateSinogram(skip, emitters, detectors, img):
         sumSkip += skip
 
     #print("sinogram line -> ", sinogram)
-    return sinogram
+    sinogram = np.asarray(sinogram)
+    return sinogram/sinogram.max()
 
+#def reconstructImage(sinogram):
+    
 
 ##########################MAIN
 
-img = loadImage('./tomograf-zdjecia/Kropka.jpg')
+img = loadImage('./tomograf-zdjecia/Shepp_logan.jpg')
 
-emitters, detectors = generateEmittersAndDetectors(25, 140, img)
-sinogram = generateSinogram(4, emitters, detectors, img)
+emitters, detectors = generateEmittersAndDetectors(90, 180, img)
+sinogram = generateSinogram(3, emitters, detectors, img)
 
 arr = np.asarray(sinogram)
 #plt.imshow(arr, cmap=plt.get_cmap('gray'))
@@ -197,4 +199,4 @@ st.write("""
     Hello *world!*
     """)
 
-st.image(loadImage('./tomograf-zdjecia/Kropka.jpg'))
+st.image(loadImage('./tomograf-zdjecia/Shepp_logan.jpg'))
