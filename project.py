@@ -127,7 +127,6 @@ def generateSinogram(skip, emitters, detectors, img):
     
     #ilosc iteracji
     n = round(360/skip)
-    sumSkip = skip
     
     sinogram = []
     for i in range(n):
@@ -137,28 +136,50 @@ def generateSinogram(skip, emitters, detectors, img):
             #print("j -> ", j)
             sinogram[i].append(scanOneLine(emitters[j], detectors[j], img))
         repositionEmittersAndDetectors(emitters, detectors, skip ,img)
-        sumSkip += skip
 
     #print("sinogram line -> ", sinogram)
     sinogram = np.asarray(sinogram)
     return sinogram/sinogram.max()
 
-#def reconstructImage(sinogram):
+def reconstructOneLine(sinogramLine, emiter, detector, img):
+    posToFill = bresenham(emiter, detector, img)
+    for i in range(len(posToFill)):
+        xToFill = posToFill[i][0]
+        yToFill = posToFill[i][1]
+        if len(sinogramLine) > i: #BEZ TEGO IFA JEST INDEX OUT OF BOUNDS
+            img[yToFill][xToFill] += sinogramLine[i] 
+
+def reconstructImage(sinogram, skip, emitters, detectors, img):
+    imgLength = len(img[0])
+    imgHeight = len(img)
     
+    image = np.zeros([imgHeight, imgLength])
+    n = round(360/skip)
+    for i in range(len(sinogram)):
+        for j in range(len(emitters)):
+            reconstructOneLine(sinogram[i], emitters[j], detectors[j], image)
+        repositionEmittersAndDetectors(emitters, detectors, skip, img)
+    for i in range(len(image[0])):
+        for j in range(len(image)):
+            if image[i][j] > 1:
+                image[i][j] = 1
+    return image
 
 ##########################MAIN
 
-img = loadImage('./tomograf-zdjecia/Shepp_logan.jpg')
-
-emitters, detectors = generateEmittersAndDetectors(90, 180, img)
+img = loadImage('./tomograf-zdjecia/Kwadraty2.jpg')
+skip = 90
+spread = 180
+emitters, detectors = generateEmittersAndDetectors(skip, spread, img)
 sinogram = generateSinogram(3, emitters, detectors, img)
-
+reconstructedImage = reconstructImage(sinogram, skip, emitters, detectors, img)
 arr = np.asarray(sinogram)
 #plt.imshow(arr, cmap=plt.get_cmap('gray'))
 #plt.savefig("arr.jpg")
 #sinogramImg = im.fromarray(np.array(sinogram))
 #print("bresenham --> ", emitters[1], "; ", detectors[1])
 #print(bresenham(emitters[1], detectors[1]))
+
 
 
 
@@ -194,9 +215,11 @@ plt.show()
 
 st.image(arr, width=400)
 
+st.image(reconstructedImage)
+
 st.write("""
     # My first app
     Hello *world!*
     """)
 
-st.image(loadImage('./tomograf-zdjecia/Shepp_logan.jpg'))
+st.image(loadImage('./tomograf-zdjecia/Kwadraty2.jpg'))
