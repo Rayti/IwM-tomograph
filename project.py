@@ -64,6 +64,7 @@ def generateEmittersAndDetectors(n, spread, img):
     #plt.savefig("plot.png")
     #print(emitters)
     
+    detectors = detectors[::-1]
     return emitters, detectors
 
 def repositionEmittersAndDetectors(emitters, detectors, alpha, img):
@@ -147,13 +148,48 @@ def generateSinogram(skip, emitters, detectors, img):
 
 img = loadImage('./tomograf-zdjecia/Kropka.jpg')
 
-emitters, detectors = generateEmittersAndDetectors(60, 180, img)
+emitters, detectors = generateEmittersAndDetectors(25, 140, img)
 sinogram = generateSinogram(4, emitters, detectors, img)
 
 arr = np.asarray(sinogram)
+#plt.imshow(arr, cmap=plt.get_cmap('gray'))
+#plt.savefig("arr.jpg")
 #sinogramImg = im.fromarray(np.array(sinogram))
 #print("bresenham --> ", emitters[1], "; ", detectors[1])
 #print(bresenham(emitters[1], detectors[1]))
+
+
+
+#--------------------------------------------------------------
+fig, ax = plt.subplots()
+ax.imshow(img)
+
+
+# Add plot on the image.
+px = [i[0] for i in emitters]
+py = [i[1] for i in emitters]
+bres = []
+for i in range(len(emitters)):
+    bres.append(bresenham(emitters[i], detectors[i], img))
+    
+for i in range(len(bres)):
+    bresX = [i[0] for i in bres[i]]
+    bresY = [i[1] for i in bres[i]]
+    ax.plot(bresX, bresY, 'o', color="red", lw=1)
+
+
+pxD = [i[0] for i in detectors]
+pyD = [i[1] for i in detectors]
+ax.plot(px,py,color="yellow",lw=3)
+ax.plot(pxD, pyD, color="blue", lw=3)
+
+
+# Save figure.
+plt.savefig("img_plot.png",bbox_inches="tight",pad_inches=0.02,dpi=250)
+plt.show()
+
+#--------------------------------------------------------------
+
 st.image(arr, width=400)
 
 st.write("""
