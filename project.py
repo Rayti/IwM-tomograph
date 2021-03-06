@@ -75,7 +75,9 @@ def repositionEmittersAndDetectors(emitters, detectors, alpha, img):
         detectors[i] = emitterPosition(detectors[i], origin, alpha, len(img[0]), len(img))
     return emitters, detectors
 
-def bresenham(p0, p1):
+def bresenham(p0, p1, img):
+    imgLength = len(img[0])
+    imgHeight = len(img)
     pts = []
     x0 = p0[0]
     y0 = p0[1]
@@ -93,7 +95,13 @@ def bresenham(p0, p1):
         sy = -1
     err = dx - dy
     while True:
-        pts.append((x0,y0))
+        xAnswer = x0
+        yAnswer = y0
+        if xAnswer >= imgLength:
+            xAnswer = imgLength - 1
+        if yAnswer >= imgHeight:
+            yAnswer = imgHeight - 1
+        pts.append((xAnswer, yAnswer))
         if x0 == x1 and y0 == y1:
             return pts
         e2 = 2*err
@@ -106,7 +114,7 @@ def bresenham(p0, p1):
 
 def scanOneLine(emiter, detector, img):
     scanned = 0
-    posToScan = bresenham(emiter, detector)
+    posToScan = bresenham(emiter, detector, img)
     for i in posToScan:
         if img[i[1]][i[0]] > scanned:
             scanned = img[i[1]][i[0]]
@@ -128,7 +136,7 @@ def generateSinogram(skip, emitters, detectors, img):
         for j in range(len(emitters)):
             #print("j -> ", j)
             sinogram[i].append(scanOneLine(emitters[j], detectors[j], img))
-        repositionEmittersAndDetectors(emitters, detectors, sumSkip ,img)
+        repositionEmittersAndDetectors(emitters, detectors, skip ,img)
         sumSkip += skip
 
     #print("sinogram line -> ", sinogram)
@@ -139,14 +147,14 @@ def generateSinogram(skip, emitters, detectors, img):
 
 img = loadImage('./tomograf-zdjecia/Kropka.jpg')
 
-emitters, detectors = generateEmittersAndDetectors(90, 180, img)
-sinogram = generateSinogram(60, emitters, detectors, img)
+emitters, detectors = generateEmittersAndDetectors(60, 180, img)
+sinogram = generateSinogram(4, emitters, detectors, img)
 
 arr = np.asarray(sinogram)
 #sinogramImg = im.fromarray(np.array(sinogram))
 #print("bresenham --> ", emitters[1], "; ", detectors[1])
 #print(bresenham(emitters[1], detectors[1]))
-st.image(arr)
+st.image(arr, width=400)
 
 st.write("""
     # My first app
