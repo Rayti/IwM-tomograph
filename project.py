@@ -211,9 +211,9 @@ def filterSinogram(sinogram, kernel):
 
 img = loadImage('./tomograf-zdjecia/Shepp_logan.jpg')
 n = 200
-skip = 3
-spread = 160
-kernelSize = 40
+skip = 2
+spread = 170
+kernelSize = 30
 emitters, detectors = generateEmittersAndDetectors(n, spread, img)
 sinogram = generateSinogram(skip, emitters, detectors, img)
 reconstructedImage = reconstructImage(sinogram, skip, emitters, detectors, img)
@@ -223,7 +223,7 @@ filteredSinogram = filterSinogram(sinogram, kernel)
 for i in range(len(filteredSinogram)):
     for j in range(len(filteredSinogram[i])):
         if filteredSinogram[i][j] < 0:
-            filteredSinogram[i][j] /= 5
+            filteredSinogram[i][j] /= 15
 filteredSinogram = (filteredSinogram - filteredSinogram.min())/(filteredSinogram.max() - filteredSinogram.min())
 
 fig, ax = plt.subplots()
