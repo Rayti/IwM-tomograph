@@ -140,45 +140,98 @@ def generateSinogram(skip, emitters, detectors, img):
     #print("sinogram line -> ", sinogram)
     sinogram = np.asarray(sinogram)
     return sinogram/sinogram.max()
+       
+def reconstructLines(sinogramLine, emitters, detectors, recImg):
+    for i in range(len(emitters)):
+        posToFill = bresenham(emitters[i], detectors[i], recImg)
+        for j in range(len(posToFill)):
+            xToFill = posToFill[j][0]
+            yToFill = posToFill[j][1]
+            recImg[yToFill][xToFill] += sinogramLine[i]
 
-def reconstructOneLine(sinogramLine, emiter, detector, img):
-    posToFill = bresenham(emiter, detector, img)
-    for i in range(len(posToFill)):
-        xToFill = posToFill[i][0]
-        yToFill = posToFill[i][1]
-        if len(sinogramLine) > i: #BEZ TEGO IFA JEST INDEX OUT OF BOUNDS
-            img[yToFill][xToFill] += sinogramLine[i] 
-
-def reconstructImage(sinogram, skip, emitters, detectors, img):
+def reconstructImage(sinogram, skip, emitters, detectors, img, filtered=False):
     imgLength = len(img[0])
     imgHeight = len(img)
     
-    image = np.zeros([imgHeight, imgLength])
+    reconstructedImage = np.zeros([imgHeight, imgLength])
     n = round(360/skip)
     for i in range(len(sinogram)):
-        for j in range(len(emitters)):
-            reconstructOneLine(sinogram[i], emitters[j], detectors[j], image)
+        reconstructLines(sinogram[i], emitters, detectors, reconstructedImage)
         repositionEmittersAndDetectors(emitters, detectors, skip, img)
-    for i in range(len(image[0])):
-        for j in range(len(image)):
-            if image[i][j] > 1:
-                image[i][j] = 1
-    return image
+        #print("sinogram[i] -> ", sinogram[i])
+        #break
+    if filtered == True:
+        for i in range(len(reconstructedImage)):
+            for j in range(len(reconstructedImage[0])):
+                if reconstructedImage[i][j] > 1:
+                    reconstructedImage[i][j] = 1
+    else:
+        reconstructedImage /= reconstructedImage.max()
+    #for i in range(len(reconstructedImage)):
+        #np.convolve(reconstructedImage[i, :], 21, mode='same')
+    return reconstructedImage
+
+def generateKernel(size):
+    kernel = []
+    for k in range(-size//2, size//2):
+        if k == 0:
+            kernel.append(1)
+        else:
+            if k % 2 == 0:
+                kernel.append(0)
+            if k % 2 == 1:
+                kernel.append((-4/(math.pi**2))/k**2)
+    fig, ax = plt.subplots()
+    ax.plot(range(-size//2, size//2), kernel, color="green", lw=2)
+    plt.savefig("kernel_plot.png");
+    return kernel
+
+def filterLine(sinogramLine, kernel):
+    line = np.convolve(sinogramLine, kernel, mode='same')
+    return line
+
+def filterSinogram(sinogram, kernel):
+    filteredSinogram = np.zeros(sinogram.shape)
+    
+    for i in range(len(filteredSinogram)):
+        filteredSinogram[i] = filterLine(sinogram[i], kernel)
+        if i == 0:
+            fig, ax = plt.subplots()
+            ax.plot(range(len(filteredSinogram[i])), filteredSinogram[i], color="blue", lw=2)
+            plt.savefig("filter_line.png");
+            
+            
+            fig, ax = plt.subplots()
+            ax.plot(range(len(sinogram[i])), sinogram[i], color="red", lw=2)
+            plt.savefig("line.png");
+    return filteredSinogram
+        
 
 ##########################MAIN
 
-img = loadImage('./tomograf-zdjecia/Kwadraty2.jpg')
-skip = 90
-spread = 180
-emitters, detectors = generateEmittersAndDetectors(skip, spread, img)
-sinogram = generateSinogram(3, emitters, detectors, img)
+img = loadImage('./tomograf-zdjecia/Shepp_logan.jpg')
+n = 200
+skip = 3
+spread = 160
+kernelSize = 40
+emitters, detectors = generateEmittersAndDetectors(n, spread, img)
+sinogram = generateSinogram(skip, emitters, detectors, img)
 reconstructedImage = reconstructImage(sinogram, skip, emitters, detectors, img)
-arr = np.asarray(sinogram)
-#plt.imshow(arr, cmap=plt.get_cmap('gray'))
-#plt.savefig("arr.jpg")
-#sinogramImg = im.fromarray(np.array(sinogram))
-#print("bresenham --> ", emitters[1], "; ", detectors[1])
-#print(bresenham(emitters[1], detectors[1]))
+kernel = generateKernel(kernelSize)
+filteredSinogram = filterSinogram(sinogram, kernel)
+#filteredSinogram /= filteredSinogram.max()
+for i in range(len(filteredSinogram)):
+    for j in range(len(filteredSinogram[i])):
+        if filteredSinogram[i][j] < 0:
+            filteredSinogram[i][j] /= 5
+filteredSinogram = (filteredSinogram - filteredSinogram.min())/(filteredSinogram.max() - filteredSinogram.min())
+
+fig, ax = plt.subplots()
+ax.plot(range(len(filteredSinogram[0])), filteredSinogram[0], color="black", lw=2)
+plt.savefig("filter_line_after_normalization.png");
+
+#filteredSinogram /= filteredSinogram.max()
+reconstructedFilteredImage = reconstructImage(filteredSinogram, skip, emitters, detectors, img, filtered=False)
 
 
 
@@ -198,7 +251,7 @@ for i in range(len(emitters)):
 for i in range(len(bres)):
     bresX = [i[0] for i in bres[i]]
     bresY = [i[1] for i in bres[i]]
-    ax.plot(bresX, bresY, 'o', color="red", lw=1)
+    ax.plot(bresX, bresY, color="red", linewidth = 1)
 
 
 pxD = [i[0] for i in detectors]
@@ -213,13 +266,15 @@ plt.show()
 
 #--------------------------------------------------------------
 
-st.image(arr, width=400)
-
+st.image(sinogram, width=400)
+st.image(filteredSinogram, width=400)
 st.image(reconstructedImage)
+st.image(reconstructedFilteredImage)
+
 
 st.write("""
     # My first app
     Hello *world!*
     """)
 
-st.image(loadImage('./tomograf-zdjecia/Kwadraty2.jpg'))
+st.image(loadImage('./tomograf-zdjecia/Shepp_logan.jpg'))
