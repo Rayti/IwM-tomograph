@@ -18,7 +18,9 @@ spreadDetectors = st.sidebar.slider('Spread of detectors', min_value = 1, max_va
 selectImg = st.sidebar.selectbox(
     'Choose image from subdirectory',
     ('./tomograf-zdjecia/CT_ScoutView.jpg','None'))
-
+if st.sidebar.button('Create sinogram'):
+    if st.sidebar.button('Reconstruct image'):
+        pass
 ##########################MAIN
 path = './tomograf-zdjecia/CT_ScoutView.jpg'
 #path = './tomograf-zdjecia/SADDLE_PE.JPG'
