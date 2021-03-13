@@ -7,6 +7,7 @@ from skimage import color
 from skimage import io
 from PIL import Image as im
 from core_functions import *
+import streamlit as st
 
 
 def isWithinImageBoundaries(position, img):
@@ -51,22 +52,41 @@ def scanOneLine(emitter, detector, img):
     return scanned
 
 #skip - delta grades to rotate each time       
-def genSinogram(emitter, detectors, spread, skip, img):
+def genSinogram(emitter, detectors, spread, skip, img, nProgress):
+    if nProgress == 0:#avoiding devision by modulo 0 error
+        nProgress = 1
     iterations = round(360/skip)
     sinogram = []
+    progressSinogram = np.zeros([round(360/skip), len(detectors)])
     for i in range(iterations):
         sinogram.append([])
         for j in range(len(detectors)):
             sinogram[i].append(scanOneLine(emitter, detectors[j], img))
         emitter, detectors = reposition(emitter, detectors, skip, img)
+        #fill progressSinogram
+        if i % nProgress == 0:
+            for ik in range(len(sinogram)):
+                for jk in range(len(sinogram[0])):
+                    progressSinogram[ik][jk] = sinogram[ik][jk]
+            progressSinogram /= progressSinogram.max()
+            st.write("iteration: ", i)
+            st.image(progressSinogram)
     sinogram = np.asarray(sinogram)
     return sinogram/sinogram.max()
 
-def reconstructImageC(sinogram, emitter, detectors, skip, imgHeight, imgWidth):
+def reconstructImage(sinogram, emitter, detectors, skip, imgHeight, imgWidth, nProgress):
+    if nProgress == 0: #avoiding devision by modulo 0 error
+        nProgress = 1
     recImg = np.zeros([imgHeight, imgWidth])
+    i = -1
     for sinLine in sinogram:
+        i += 1
         reconstructLines(sinLine, emitter, detectors, recImg)
         emitter, detectors = reposition(emitter, detectors, skip, recImg) 
+        if i % nProgress == 0:
+            progressRecImg = recImg/recImg.max()
+            st.write("iteration: ", i)
+            st.image(progressRecImg)
 #    for i in range(len(recImg)):
 #        for j in range(len(recImg[i])):
 #            if recImg[i][j] > 1:

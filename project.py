@@ -12,54 +12,29 @@ from filtering import *
 
 
 
-nDetectors = st.sidebar.slider('Amount of detectors', min_value = 1, max_value = 1000)
-deltaAlpha = st.sidebar.slider('Grade to rotate in each iteration', min_value = 1, max_value = 360)
-spreadDetectors = st.sidebar.slider('Spread of detectors', min_value = 1, max_value = 360)
+nDetectors = st.sidebar.slider('Amount of detectors', min_value = 1, max_value = 1000, value = 100)
+deltaAlpha = st.sidebar.slider('Grade to rotate in each iteration', min_value = 1, max_value = 360, value = 20)
+spreadDetectors = st.sidebar.slider('Spread of detectors', min_value = 1, max_value = 360, value = 180)
+st.write(spreadDetectors)
 selectImg = st.sidebar.selectbox(
     'Choose image from subdirectory',
-    ('./tomograf-zdjecia/CT_ScoutView.jpg','None'))
-if st.sidebar.button('Create sinogram'):
-    if st.sidebar.button('Reconstruct image'):
-        pass
-##########################MAIN
-path = './tomograf-zdjecia/CT_ScoutView.jpg'
-#path = './tomograf-zdjecia/SADDLE_PE.JPG'
-img = loadImage(path)
-n = 25
-skip = 60
-spread = 120
-kernelSize = 20
+    ('./tomograf-zdjecia/CT_ScoutView.jpg','./tomograf-zdjecia/SADDLE_PE.JPG', './tomograf-zdjecia/Kwadraty2.jpg', './tomograf-zdjecia/Kropka.jpg'))
+nProgress = st.sidebar.slider('Show progress every n roations', min_value = 1, max_value = round(360/deltaAlpha), value = round((360/deltaAlpha)/3))
+st.sidebar.write("Selected image")
+st.sidebar.image(loadImage(selectImg))
 
-#--------------------------------------------------------------
-fig, ax = plt.subplots()
-ax.imshow(img)
-
-#CONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONE
-emitterCone, detectorsCone = generate(n, spread, img)
-pxCone = [i[0] for i in detectorsCone]
-pyCone = [i[1] for i in detectorsCone]
-pxCone.append(emitterCone[0])
-pyCone.append(emitterCone[1])
-ax.plot(pxCone, pyCone, 'o', color="green", lw = 2)
-sinogramCone = genSinogram(emitterCone, detectorsCone, spread, skip, img)
-#filteredSinogram = filterSinogram(sinogramCone, generateKernel(kernelSize))
-#print(filteredSinogram)
-recImgCone = reconstructImageC(sinogramCone, emitterCone, detectorsCone, skip,  len(img), len(img[0]))
-#CONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONECONE
-
-
-# Save figure.
-plt.savefig("img_plot.png",bbox_inches="tight",pad_inches=0.02,dpi=250)
-plt.show()
-
-#--------------------------------------------------------------
-
-st.image(sinogramCone, width=200)
-#st.image(filteredSinogram, width=200)
-#st.image(reconstructedImage)
-#st.image(reconstructedFilteredImage)
-st.image(recImgCone)
-
+if st.sidebar.button('Execute'):
+    img = loadImage(selectImg)
+    emitter, detectors = generate(nDetectors, deltaAlpha, img)
+    sinogram = genSinogram(emitter, detectors, spreadDetectors, deltaAlpha, img, nProgress)
+    st.write("Completed sinogram")
+    st.image(sinogram)
+    
+    reconstructedImage = reconstructImage(sinogram, emitter, detectors, deltaAlpha, len(img), len(img[0]), nProgress)
+    st.write("Reconstructed image")
+    st.image(reconstructedImage)
+    
+    
 if st.button('add'):
     result = 1 + 2
     st.write('result: %s' % result)
@@ -69,4 +44,4 @@ st.write("""
     Hello *world!*
     """)
 
-st.image(loadImage(path))
+#st.image(loadImage(path))
