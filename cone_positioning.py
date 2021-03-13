@@ -10,7 +10,7 @@ from core_functions import *
 
 
 def isWithinImageBoundaries(position, img):
-    if position[0] in range(0, len(img[0])) and position[1] in range(0, len(img[1])):
+    if position[0] in range(0, len(img[0])) and position[1] in range(0, len(img)):
         return True
     else:
         return False
@@ -50,6 +50,7 @@ def scanOneLine(emitter, detector, img):
             scanned += img[i[1]][i[0]]
     return scanned
 
+#skip - delta grades to rotate each time       
 def genSinogram(emitter, detectors, spread, skip, img):
     iterations = round(360/skip)
     sinogram = []
