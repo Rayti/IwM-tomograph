@@ -52,45 +52,47 @@ def scanOneLine(emitter, detector, img):
     return scanned
 
 #skip - delta grades to rotate each time       
-def genSinogram(emitter, detectors, spread, skip, img, nProgress):
+def genSinogram(emitter, detectors, skip, img, nProgress):
+    progressBar = st.progress(0)
     if nProgress == 0:#avoiding devision by modulo 0 error
         nProgress = 1
     iterations = round(360/skip)
     sinogram = []
     progressSinogram = np.zeros([round(360/skip), len(detectors)])
+    stImg = st.empty()
     for i in range(iterations):
+        progressBar.progress(round((100/iterations)*(i+1)))
         sinogram.append([])
         for j in range(len(detectors)):
             sinogram[i].append(scanOneLine(emitter, detectors[j], img))
         emitter, detectors = reposition(emitter, detectors, skip, img)
         #fill progressSinogram
-        if i % nProgress == 0:
+        if (i+1) % nProgress == 0:
             for ik in range(len(sinogram)):
                 for jk in range(len(sinogram[0])):
                     progressSinogram[ik][jk] = sinogram[ik][jk]
             progressSinogram /= progressSinogram.max()
-            st.write("iteration: ", i)
-            st.image(progressSinogram)
+            stImg.image(progressSinogram)
     sinogram = np.asarray(sinogram)
+    stImg.image(sinogram/sinogram.max())
     return sinogram/sinogram.max()
 
 def reconstructImage(sinogram, emitter, detectors, skip, imgHeight, imgWidth, nProgress):
+    progressBar = st.progress(0)
+    stImg = st.empty()
     if nProgress == 0: #avoiding devision by modulo 0 error
         nProgress = 1
     recImg = np.zeros([imgHeight, imgWidth])
-    i = -1
+    i = 0
     for sinLine in sinogram:
         i += 1
+        progressBar.progress(round(100/(len(sinogram)/i)))
         reconstructLines(sinLine, emitter, detectors, recImg)
         emitter, detectors = reposition(emitter, detectors, skip, recImg) 
         if i % nProgress == 0:
             progressRecImg = recImg/recImg.max()
-            st.write("iteration: ", i)
-            st.image(progressRecImg)
-#    for i in range(len(recImg)):
-#        for j in range(len(recImg[i])):
-#            if recImg[i][j] > 1:
-#                recImg[i][j] = 1
+            stImg.image(progressRecImg)
+    stImg.image(recImg/recImg.max())
     return recImg/recImg.max()
 
 def reconstructLines(sinogramLine, emitter, detectors, recImg):
