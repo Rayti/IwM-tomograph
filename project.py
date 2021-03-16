@@ -13,6 +13,7 @@ from core_functions import *
 from cone_positioning import *
 from filtering import *
 from glob import glob
+from dicom_file_creator import *
 import pydicom
 
 
@@ -25,13 +26,26 @@ spreadDetectors = st.sidebar.slider('Spread of detectors', min_value = 1, max_va
 selectImg = st.sidebar.selectbox('Choose image from subdirectory', files)
 chosenPath = "./tomograf-zdjecia/" + selectImg
 nProgress = st.sidebar.slider('Show progress every n rotations', min_value = 1, max_value = round(360/deltaAlpha), value = 1)
-dicomFileFlag = st.sidebar.checkbox("Create DICOM file")
+
 filterFlag = st.sidebar.checkbox("With filtering")
+
+dicomFileFlag = st.sidebar.checkbox("Create DICOM file")
+dicomFileName = "sample.dcm"
+patientId = "123456"
+patientFullName = "Teuzebiusz Buraczek"
+inspectionDate = "2021/03/16"
+if dicomFileFlag == True:
+    dicomFileName = st.sidebar.text_input(label = 'Output file name:', value = "sample.dcm")
+    patientId = st.sidebar.text_input(label = 'Patient ID:', value = "123456")
+    patientFullName = st.sidebar.text_input(label = 'Patient full name:', value = "Teuzebiusz Buraczek")
+    inspectionDate = st.sidebar.text_input(label = 'Inspection date:', value = "2021/03/16")
+    
+    
 st.image(loadImage(chosenPath))
 
 if st.sidebar.button('Test'):
     testPositioning(loadImage(chosenPath))
-
+    
 if st.sidebar.button('Execute'):
     img = loadImage(chosenPath)
     emitter, detectors = generate(nDetectors, spreadDetectors, img)
@@ -46,4 +60,6 @@ if st.sidebar.button('Execute'):
     emitter, detectors = generate(nDetectors, spreadDetectors, img)
     reconstructedImage = reconstructImage(sinogram, emitter, detectors, deltaAlpha, len(img), len(img[0]), nProgress)
     if dicomFileFlag == True:
-        createDicomFile(reconstructedImage, "Patient", "1.2.34.5")
+        createDicomFile(reconstructedImage, dicomFileName, patientId, patientFullName, inspectionDate)
+        st.write("Dicom file ", dicomFileName, " created")
+
