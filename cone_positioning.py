@@ -39,6 +39,7 @@ def generate(n, spread, img):
 def reposition(emitter, detectors, alpha, img):
     origin = [(len(img[0]) - 1)/2, (len(img) - 1)/2]
     emitter = nextPosition(emitter, origin, alpha)
+
     for i in range(len(detectors)):
         detectors[i] = nextPosition(detectors[i], origin, alpha)
     return emitter, detectors
@@ -101,9 +102,23 @@ def reconstructLines(sinogramLine, emitter, detectors, recImg):
 
 def reconstructOneLine(value, emitter, detector, recImg):
     positions = bresenham(emitter, detector, recImg)
+    
     for pos in positions:
         if isWithinImageBoundaries(pos, recImg):
             recImg[pos[1]][pos[0]] += value
 
-        
-            
+    
+def testPositioning(img):
+    fig, ax = plt.subplots()
+    
+    origin = [(len(img[0]) - 1)/2, (len(img) - 1)/2]
+    seedPosition = [len(img[0]), 0] #right top image corner
+    emitter = nextPosition([len(img[0]) - 1, 0], origin, 360 - 45) #middle top above image
+    
+    for i in range(360):
+        ax.plot(emitter[0], emitter[1], 'o', color="red")
+        ax.axis('equal')
+        emitter = nextPosition(emitter, origin, 1)
+    
+    
+    plt.savefig("emitter_positions");

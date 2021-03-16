@@ -39,11 +39,15 @@ def filterSinogram(sinogram, kernel):
             fig, ax = plt.subplots()
             ax.plot(range(len(sinogram[i])), sinogram[i], color="red", lw=2)
             plt.savefig("line.png");
-#    for i in range(len(filteredSinogram)):
-#        for j in range(len(filteredSinogram[i])):
-#            if filteredSinogram[i][j] < 0:
-#                filteredSinogram[i][j] /= 10
+    #for i in range(len(filteredSinogram)):
+        #for j in range(len(filteredSinogram[i])):
+            #if filteredSinogram[i][j] < 0:
+                #filteredSinogram[i][j] /= 10
     filteredSinogram = (filteredSinogram - filteredSinogram.min())/(filteredSinogram.max() - filteredSinogram.min())
     
+    fig, ax = plt.subplots()
+    ax.plot(range(len(filteredSinogram[0])), filteredSinogram[0], color="green", lw=2)
+    plt.savefig("filter_line_normalized.png");
+        
     return filteredSinogram#/filteredSinogram.max()
         
