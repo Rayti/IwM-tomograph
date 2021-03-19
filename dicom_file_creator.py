@@ -4,7 +4,7 @@ from pydicom.uid import ExplicitVRLittleEndian
 import pydicom._storage_sopclass_uids
 import numpy as np
 
-def createDicomFile(img, filename, patientId, patientName, inspectionDate):
+def createDicomFile(img, filename, patientId, patientName, inspectionDate, comment):
     
     for i in range(len(img)):
         for j in range(len(img[0])):
@@ -58,6 +58,10 @@ def createDicomFile(img, filename, patientId, patientName, inspectionDate):
     ds.PixelSpacing = r"1\1"
     ds.PhotometricInterpretation = "MONOCHROME2"
     ds.PixelRepresentation = 1
+    
+    ds.StudyDescription = comment
+    
+    print(ds)
 
     pydicom.dataset.validate_file_meta(ds.file_meta, enforce_standard=True)
 

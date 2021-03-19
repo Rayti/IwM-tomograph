@@ -98,8 +98,6 @@ def reconstructImage(n, spread, alpha, sinogram, imgHeight, imgWidth, nProgress)
         for j in range(len(countMatrix[0])):
             if countMatrix[i][j] != 0:
                 recImg[i][j] /= countMatrix[i][j]
-    print(np.percentile(recImg, 98))
-    print(np.percentile(recImg, 2))
     bottom = np.percentile(recImg, 2)
     top = np.percentile(recImg,98)
     for i in range(len(recImg)):
@@ -128,26 +126,14 @@ def reconstructOneLine(value, emitter, detector, recImg, countMatrix):
     
 def testPositioning(n, spread, alpha, img):
     fig, ax = plt.subplots()
-    
     origin = [(len(img[0]) - 1)/2, (len(img) - 1)/2]
     print("imgHeight -> ", len(img))
     print("imgLength -> ", len(img[0]))
     ax.plot(origin[0], origin[1], 'o', color="black")
     emitter, detectors = setUpPositions(n, spread, alpha, img)
-    print("le of detectors -> ", len(detectors))
     ax.plot(emitter[0], emitter[1], 'o', color="red")
     for i in detectors:
         ax.plot(i[0], i[1], 'o', color="blue")
-        #print(i)
-        #bres = bresenham(emitter, i)
-        #bresX = []
-        #bresY = []
-        #for b in bres:
-        #    bresX.append(b[0])
-        #    bresY.append(b[1])
-        #ax.plot(bresX, bresY, color = "green", lw = 1)
-        #ax.plot(i[0], i[1], 'o', color="blue")
-    
     ax.set_xlim([-200, len(img[0]) + 200])
     ax.set_ylim([-200, len(img) + 200])
     ax.axis('equal')

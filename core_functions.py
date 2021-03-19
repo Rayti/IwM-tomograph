@@ -46,7 +46,15 @@ def bresenham(p0, p1):
             y0 = y0 + sy
         pts.append((x0, y0))
         
-
+def getRMSE(img, recImg):
+    rmse = 0
+    counter = 0
+    for i in range(len(img)):
+        for j in range(len(img[0])):
+            rmse += (recImg[i][j] - img[i][j])**2
+            counter +=1
+    rmse /= counter
+    return math.sqrt(rmse)
         
 def createDicomFile(img, patientName, patientId):
     fileMeta = FileMetaDataset()
@@ -69,35 +77,20 @@ def createDicomFile(img, patientName, patientId):
     timeStr = dt.strftime('%H%M%S.%f')
     ds.ContentTime = timeStr
     pd = img * 255.0/img.max()
-    #ds.PixelData = pd.tobytes()
-    #ds.Rows, ds.Columns = img.shape
     
     dss = pydicom.dcmread("sample.dcm")
     arr = dss.pixel_array
     
-    #tmp = np.full((200, 200), 220)
     ds.PixelData = arr
     ds.Rows, ds.Columns = arr.shape
-    
-    ds.save_as("dicomFile.dcm",  write_like_original=False)
     
     ds.file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRBigEndian
     ds.is_little_endian = False
     ds.is_implicit_VR = False
-    #ds.save_as("secondDicomFile.dcm", write_like_original=False)
-    
-    #arr[arr < 100] = 0
+
     dss.PixelData = arr
     dss.Rows, dss.Columns = arr.shape
     dss.save_as("sample2.dcm")
-    #for i in range(len(dss.pixel_array)):
-    #    for j in range(len(dss.pixel_array[0])):
-    #        if dss.pixel_array[i][j] > mx :
-    #            mx = dss.pixel_array[i][j]
-    #            
-    #print(mx)
-    #print(dss.pixel_array[0])
-    #print(img)
-    
+
     
     
