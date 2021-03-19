@@ -16,57 +16,51 @@ def isWithinImageBoundaries(position, img):
     else:
         return False
 
-def nextPosition(previousPosition, origin, alpha):
-    alpha = alpha * math.pi / 180 #changing grades to radians
-    x0 = previousPosition[0]
-    y0 = previousPosition[1]
+def getPosition(seedPosition, origin, alpha):
+    alpha = alpha * math.pi / 180
+    x0 = seedPosition[0]
+    y0 = seedPosition[1]
     xOrigin = origin[0]
     yOrigin = origin[1]
     x1 = round(xOrigin + (x0 - xOrigin) * math.cos(alpha) - (y0 - yOrigin) * math.sin(alpha))
     y1 = round(yOrigin + (x0 - xOrigin) * math.sin(alpha) + (y0 - yOrigin) * math.cos(alpha))
     return [x1, y1]
 
-def generate(n, spread, img):
+def setUpPositions(n, spread, alpha, img):
     detectors = []
-    origin = [(len(img[0]) - 1)/2, (len(img) - 1)/2]
-    alpha = spread / n
-    seedPosition = [len(img[0]), 0] #right top image corner
-    emitter = nextPosition([len(img[0]) - 1, 0], origin, 360 - 45) #middle top above image
+    origin = [(len(img[0])-1)/2, (len(img) - 1)/2]
+    seedPosition = [len(img[0]) -1 , 0] #right top image corner
+    emitter = getPosition(seedPosition, origin, alpha)
+    spreadAlpha = spread / n
     for i in range(n):
-        detectors.append(nextPosition(emitter, origin, 180-(alpha*n)/2+alpha*i))
+        detectors.append(getPosition(emitter, origin, 180 - spread/2 + spreadAlpha/2  + spreadAlpha * i  ))
     return emitter, detectors
-
-def reposition(emitter, detectors, alpha, img):
-    origin = [(len(img[0]) - 1)/2, (len(img) - 1)/2]
-    emitter = nextPosition(emitter, origin, alpha)
-
-    for i in range(len(detectors)):
-        detectors[i] = nextPosition(detectors[i], origin, alpha)
-    return emitter, detectors
+    
 
 def scanOneLine(emitter, detector, img):
     scanned = 0
-    posToScan = bresenham(emitter, detector, img)
+    posToScan = bresenham(emitter, detector)
     for i in posToScan:
         if isWithinImageBoundaries(i, img):
             scanned += img[i[1]][i[0]]
     return scanned
 
-#skip - delta grades to rotate each time       
-def genSinogram(emitter, detectors, skip, img, nProgress):
+
+
+def genSinogram(n, spread, alpha, img, nProgress):
     progressBar = st.progress(0)
-    if nProgress == 0:#avoiding devision by modulo 0 error
+    if nProgress == 0:#avoiding division by modulo 0 error
         nProgress = 1
-    iterations = round(360/skip)
+    iterations = round(360/alpha)
     sinogram = []
-    progressSinogram = np.zeros([round(360/skip), len(detectors)])
+    progressSinogram = np.zeros([round(360/alpha), n])
     stImg = st.empty()
     for i in range(iterations):
+        emitter, detectors = setUpPositions(n, spread, alpha * i, img)
         progressBar.progress(round((100/iterations)*(i+1)))
         sinogram.append([])
         for j in range(len(detectors)):
             sinogram[i].append(scanOneLine(emitter, detectors[j], img))
-        emitter, detectors = reposition(emitter, detectors, skip, img)
         #fill progressSinogram
         if (i+1) % nProgress == 0:
             for ik in range(len(sinogram)):
@@ -76,49 +70,87 @@ def genSinogram(emitter, detectors, skip, img, nProgress):
             stImg.image(progressSinogram)
     sinogram = np.asarray(sinogram)
     stImg.image(sinogram/sinogram.max())
-    return sinogram/sinogram.max()
+    return sinogram
 
-def reconstructImage(sinogram, emitter, detectors, skip, imgHeight, imgWidth, nProgress):
+
+def reconstructImage(n, spread, alpha, sinogram, imgHeight, imgWidth, nProgress):
     progressBar = st.progress(0)
     stImg = st.empty()
     if nProgress == 0: #avoiding devision by modulo 0 error
         nProgress = 1
     recImg = np.zeros([imgHeight, imgWidth])
+    countMatrix = np.zeros([imgHeight, imgWidth])
     i = 0
     for sinLine in sinogram:
         i += 1
         progressBar.progress(round(100/(len(sinogram)/i)))
-        reconstructLines(sinLine, emitter, detectors, recImg)
-        emitter, detectors = reposition(emitter, detectors, skip, recImg) 
+        emitter, detectors = setUpPositions(n, spread, alpha * (i - 1), recImg)
+        reconstructLines(sinLine, emitter, detectors, recImg, countMatrix)
         if i % nProgress == 0:
-            progressRecImg = recImg/recImg.max()
-            stImg.image(progressRecImg)
-    stImg.image(recImg/recImg.max())
-    return recImg/recImg.max()
-
-def reconstructLines(sinogramLine, emitter, detectors, recImg):
-    for i in range(len(detectors)):
-        reconstructOneLine(sinogramLine[i], emitter, detectors[i], recImg)
-
-def reconstructOneLine(value, emitter, detector, recImg):
-    positions = bresenham(emitter, detector, recImg)
+            progressRecImg = recImg.copy()
+            for ipro in range(len(countMatrix)):
+                for jpro in range(len(countMatrix[0])):
+                    if countMatrix[ipro][jpro] != 0:
+                        progressRecImg[ipro][jpro] /= countMatrix[ipro][jpro]
+            stImg.image((progressRecImg - progressRecImg.min())/(progressRecImg.max() - progressRecImg.min()))
+           
+    for i in range(len(countMatrix)):
+        for j in range(len(countMatrix[0])):
+            if countMatrix[i][j] != 0:
+                recImg[i][j] /= countMatrix[i][j]
+    print(np.percentile(recImg, 98))
+    print(np.percentile(recImg, 2))
+    bottom = np.percentile(recImg, 2)
+    top = np.percentile(recImg,98)
+    for i in range(len(recImg)):
+        for j in range(len(recImg[0])):
+            if recImg[i][j] <= bottom:
+                recImg[i][j] = bottom
+            if recImg[i][j] >= top:
+                recImg[i][j] = top
     
+    recImg = (recImg - recImg.min())/(recImg.max() - recImg.min())
+    
+    stImg.image(recImg)
+    return recImg
+
+def reconstructLines(sinogramLine, emitter, detectors, recImg, countMatrix):
+    for i in range(len(detectors)):
+        reconstructOneLine(sinogramLine[i], emitter, detectors[i], recImg, countMatrix)
+
+def reconstructOneLine(value, emitter, detector, recImg, countMatrix):
+    positions = bresenham(emitter, detector)
     for pos in positions:
         if isWithinImageBoundaries(pos, recImg):
             recImg[pos[1]][pos[0]] += value
+            countMatrix[pos[1]][pos[0]] +=1
 
     
-def testPositioning(img):
+def testPositioning(n, spread, alpha, img):
     fig, ax = plt.subplots()
     
     origin = [(len(img[0]) - 1)/2, (len(img) - 1)/2]
-    seedPosition = [len(img[0]), 0] #right top image corner
-    emitter = nextPosition([len(img[0]) - 1, 0], origin, 360 - 45) #middle top above image
+    print("imgHeight -> ", len(img))
+    print("imgLength -> ", len(img[0]))
+    ax.plot(origin[0], origin[1], 'o', color="black")
+    emitter, detectors = setUpPositions(n, spread, alpha, img)
+    print("le of detectors -> ", len(detectors))
+    ax.plot(emitter[0], emitter[1], 'o', color="red")
+    for i in detectors:
+        ax.plot(i[0], i[1], 'o', color="blue")
+        #print(i)
+        #bres = bresenham(emitter, i)
+        #bresX = []
+        #bresY = []
+        #for b in bres:
+        #    bresX.append(b[0])
+        #    bresY.append(b[1])
+        #ax.plot(bresX, bresY, color = "green", lw = 1)
+        #ax.plot(i[0], i[1], 'o', color="blue")
     
-    for i in range(360):
-        ax.plot(emitter[0], emitter[1], 'o', color="red")
-        ax.axis('equal')
-        emitter = nextPosition(emitter, origin, 1)
-    
-    
+    ax.set_xlim([-200, len(img[0]) + 200])
+    ax.set_ylim([-200, len(img) + 200])
+    ax.axis('equal')
+    plt.grid()
     plt.savefig("emitter_positions");
+    

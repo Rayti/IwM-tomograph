@@ -17,9 +17,7 @@ def loadImage(path):
     img = color.rgb2gray(io.imread(path))
     return img
 
-def bresenham(p0, p1, img):
-    imgLength = len(img[0])
-    imgHeight = len(img)
+def bresenham(p0, p1):
     pts = []
     x0 = p0[0]
     y0 = p0[1]
@@ -37,8 +35,7 @@ def bresenham(p0, p1, img):
         sy = -1
     err = dx - dy
     while True:
-        pts.append((x0, y0))
-        if x0 == x1 and y0 == y1:
+        if x0 == x1  and y0 == y1:
             return pts
         e2 = 2*err
         if e2 > -dy:
@@ -47,6 +44,9 @@ def bresenham(p0, p1, img):
         if e2 < dx:
             err = err + dx
             y0 = y0 + sy
+        pts.append((x0, y0))
+        
+
         
 def createDicomFile(img, patientName, patientId):
     fileMeta = FileMetaDataset()

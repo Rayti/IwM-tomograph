@@ -44,21 +44,19 @@ if dicomFileFlag == True:
 st.image(loadImage(chosenPath))
 
 if st.sidebar.button('Test'):
-    testPositioning(loadImage(chosenPath))
+    testPositioning(nDetectors, spreadDetectors, 0, loadImage(chosenPath))
     
 if st.sidebar.button('Execute'):
     img = loadImage(chosenPath)
-    emitter, detectors = generate(nDetectors, spreadDetectors, img)
     st.write("Sinogram")
-    sinogram = genSinogram(emitter, detectors, deltaAlpha, img, nProgress)
+    sinogram = genSinogram(nDetectors, spreadDetectors, deltaAlpha, img, nProgress)
     if filterFlag == True:
-        kernel = generateKernel(nDetectors)
+        kernel = generateKernel(nDetectors)#(nDetectors % 30 + 21)
         sinogram = filterSinogram(sinogram, kernel)
         st.write("Filtered sinogram")
-        st.image(sinogram)
+        st.image((sinogram - sinogram.min())/(sinogram.max() - sinogram.min()))
     st.write("Reconstructed image")
-    emitter, detectors = generate(nDetectors, spreadDetectors, img)
-    reconstructedImage = reconstructImage(sinogram, emitter, detectors, deltaAlpha, len(img), len(img[0]), nProgress)
+    reconstructedImage = reconstructImage(nDetectors, spreadDetectors, deltaAlpha, sinogram, len(img), len(img[0]), nProgress)
     if dicomFileFlag == True:
         createDicomFile(reconstructedImage, dicomFileName, patientId, patientFullName, inspectionDate)
         st.write("Dicom file ", dicomFileName, " created")
