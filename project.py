@@ -8,7 +8,6 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from skimage import color
 from skimage import io
-from PIL import Image as im
 from core_functions import *
 from cone_positioning import *
 from filtering import *
@@ -53,9 +52,11 @@ if st.sidebar.button('Execute'):
         st.header("Reconstructed image (normal):")
         reconstructedImage = reconstructImage(nDetectors, spreadDetectors, deltaAlpha, sinogram, len(img), len(img[0]), nProgress)
         st.write("RMSE: ", getRMSE(img, reconstructedImage))
+        if dicomFileFlag == True:
+            createDicomFile(reconstructedImage, dicomFileName, patientId, patientFullName, inspectionDate, comment)
+            st.write("Dicom file ", dicomFileName, " created")
     if executionFlag in ("Filtered", "Both"):
-        
-        kernel = generateKernel(nDetectors)#(nDetectors % 30 + 21)
+        kernel = generateKernel(22)
         filteredSinogram = filterSinogram(sinogram, kernel)
         st.header("Filtered sinogram")
         st.image((filteredSinogram - filteredSinogram.min())/(filteredSinogram.max() - filteredSinogram.min()))
@@ -63,11 +64,9 @@ if st.sidebar.button('Execute'):
         st.header("Reconstructed image (filtered):")
         reconstructedFilteredImage = reconstructImage(nDetectors, spreadDetectors, deltaAlpha, filteredSinogram, len(img), len(img[0]), nProgress)
         st.write("RMSE: ", getRMSE(img, reconstructedFilteredImage))
-    if dicomFileFlag == True:
-        createDicomFile(reconstructedImage, dicomFileName, patientId, patientFullName, inspectionDate, comment)
-        st.write("Dicom file ", dicomFileName, " created")
-        createDicomFile(reconstructedFilteredImage, "filtered_" + dicomFileName, patientId, patientFullName, inspectionDate, comment)
-        st.write("Dicom file ", "filtered_" + dicomFileName, " created")
+        if dicomFileFlag == True:
+            createDicomFile(reconstructedFilteredImage, "filtered_" + dicomFileName, patientId, patientFullName, inspectionDate, comment)
+            st.write("Dicom file ", "filtered_" + dicomFileName, " created")
 
 st.sidebar.text(" ")
 st.sidebar.text(" ")

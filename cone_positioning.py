@@ -5,7 +5,6 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from skimage import color
 from skimage import io
-from PIL import Image as im
 from core_functions import *
 import streamlit as st
 
