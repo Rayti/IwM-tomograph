@@ -72,8 +72,9 @@ def genSinogram(n, spread, alpha, img, nProgress):
     return sinogram
 
 
-def reconstructImage(n, spread, alpha, sinogram, imgHeight, imgWidth, nProgress):
+def reconstructImage(n, spread, alpha, sinogram, imgHeight, imgWidth, nProgress, img):
     progressBar = st.progress(0)
+    rmse = st.empty()
     stImg = st.empty()
     if nProgress == 0: #avoiding devision by modulo 0 error
         nProgress = 1
@@ -92,6 +93,8 @@ def reconstructImage(n, spread, alpha, sinogram, imgHeight, imgWidth, nProgress)
                     if countMatrix[ipro][jpro] != 0:
                         progressRecImg[ipro][jpro] /= countMatrix[ipro][jpro]
             stImg.image((progressRecImg - progressRecImg.min())/(progressRecImg.max() - progressRecImg.min()))
+            text = "Current RMSE: " + str(round(getRMSE(img, (recImg - recImg.min())/(recImg.max() - recImg.min())), 4))
+            rmse.text(text)
            
     for i in range(len(countMatrix)):
         for j in range(len(countMatrix[0])):
@@ -105,9 +108,7 @@ def reconstructImage(n, spread, alpha, sinogram, imgHeight, imgWidth, nProgress)
                 recImg[i][j] = bottom
             if recImg[i][j] >= top:
                 recImg[i][j] = top
-    
     recImg = (recImg - recImg.min())/(recImg.max() - recImg.min())
-    
     stImg.image(recImg)
     return recImg
 

@@ -19,10 +19,10 @@ import pydicom
 st.title("Tomograph simulation")
 files = glob("./tomograf-zdjecia/*")
 files = [f[19:] for f in files]
-nDetectors = st.sidebar.slider('Amount of detectors', min_value = 1, max_value = 1000, value = 100)
-deltaAlpha = st.sidebar.slider('Grades to rotate in each iteration', min_value = 1, max_value = 45, value = 10)
-spreadDetectors = st.sidebar.slider('Spread of detectors', min_value = 1, max_value = 360, value = 180)
-selectImg = st.sidebar.selectbox('Choose image from subdirectory', files)
+nDetectors = st.sidebar.slider('Amount of detectors', min_value = 10, max_value = 360, value = 360)
+deltaAlpha = st.sidebar.slider('Grades to rotate in each iteration', min_value = 1, max_value = 45, value = 2)
+spreadDetectors = st.sidebar.slider('Spread of detectors', min_value = 45, max_value = 270, value = 270)
+selectImg = st.sidebar.selectbox('Choose image from subdirectory', files, index=files.index('Shepp_logan.jpg'))
 chosenPath = "./tomograf-zdjecia/" + selectImg
 nProgress = st.sidebar.slider('Show progress every n iterations', min_value = 1, max_value = round(360/deltaAlpha), value = 1)
 
@@ -50,8 +50,8 @@ if st.sidebar.button('Execute'):
     sinogram = genSinogram(nDetectors, spreadDetectors, deltaAlpha, img, nProgress)
     if executionFlag in ("Normal", "Both"):
         st.header("Reconstructed image (normal):")
-        reconstructedImage = reconstructImage(nDetectors, spreadDetectors, deltaAlpha, sinogram, len(img), len(img[0]), nProgress)
-        st.write("RMSE: ", getRMSE(img, reconstructedImage))
+        reconstructedImage = reconstructImage(nDetectors, spreadDetectors, deltaAlpha, sinogram, len(img), len(img[0]), nProgress, img)
+        st.write("Final RMSE: ", round(getRMSE(img, reconstructedImage), 4))
         if dicomFileFlag == True:
             createDicomFile(reconstructedImage, dicomFileName, patientId, patientFullName, inspectionDate, comment)
             st.write("Dicom file ", dicomFileName, " created")
@@ -62,8 +62,8 @@ if st.sidebar.button('Execute'):
         st.image((filteredSinogram - filteredSinogram.min())/(filteredSinogram.max() - filteredSinogram.min()))
         
         st.header("Reconstructed image (filtered):")
-        reconstructedFilteredImage = reconstructImage(nDetectors, spreadDetectors, deltaAlpha, filteredSinogram, len(img), len(img[0]), nProgress)
-        st.write("RMSE: ", getRMSE(img, reconstructedFilteredImage))
+        reconstructedFilteredImage = reconstructImage(nDetectors, spreadDetectors, deltaAlpha, filteredSinogram, len(img), len(img[0]), nProgress, img)
+        st.write("Final RMSE: ", round(getRMSE(img, reconstructedFilteredImage), 4))
         if dicomFileFlag == True:
             createDicomFile(reconstructedFilteredImage, "filtered_" + dicomFileName, patientId, patientFullName, inspectionDate, comment)
             st.write("Dicom file ", "filtered_" + dicomFileName, " created")
